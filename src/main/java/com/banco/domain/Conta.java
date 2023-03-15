@@ -1,0 +1,135 @@
+package com.banco.domain;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import com.banco.dto.ContaResponseDto;
+import com.banco.dto.PixBacenDto;
+import com.banco.exceptions.SaldoInsuficienteException;
+import com.banco.exceptions.ValorInvalidoException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Entity
+//@Table(name = "bootcamp_conta")
+@Getter
+@Setter
+public class Conta implements Serializable {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private int agencia;
+	private int numero = new Random().nextInt(100000);
+	private BigDecimal saldo = BigDecimal.ZERO;
+	private String pix;
+	@ManyToOne
+	private Banco banco;
+
+	@CreationTimestamp
+	private LocalDateTime dataCriacao;
+	@UpdateTimestamp
+	private LocalDateTime dataUltimaAtualizacao;
+
+	@JsonIgnore
+	@ManyToOne
+	@JoinColumn(name = "nome_coluna_titular_id")
+	private Titular titular;
+
+	@ManyToMany
+	@JoinTable(name = "conta_tipos_tarifa", joinColumns = @JoinColumn(name = "conta_id"), inverseJoinColumns = @JoinColumn(name = "tipo_tarifa_id"))
+	private List<TipoTarifa> tiposTarifa = new ArrayList<>();
+
+	public Conta() {
+	}
+
+	// credito, debito
+	public void credito(BigDecimal valor) {
+		this.validar(valor);
+		saldo = saldo.add(valor);
+		log.info("Conta {}/{} foi creditada com {} valor.", this.agencia, this.numero, valor);
+	}
+
+
+	/** -1 se for menor
+	 *	0 se for igual
+	 *	1 se for maior
+ 	 *
+	 *	valor = 100
+	 *	saldo = 250
+	 *	100.compareTo(250) > 0 -> -1
+	 *	if (-1 > 0) { nao entro }
+	 *
+	 *	valor = 100
+	 *	saldo = 50
+	 *
+	 *	100.compareTo(50) > 0 -> 1
+	 *	if (1 > 0) { sim entro }
+	 */
+	public void debito(BigDecimal valor) {
+		this.validar(valor);
+		if (valor.compareTo(saldo) > 0) {
+			throw new SaldoInsuficienteException("Conta não tem saldo para atender a solicitacao");
+		}
+		saldo = saldo.subtract(valor);
+		log.info("Conta {}/{} foi debitada com {} valor.", this.agencia, this.numero, valor);
+	}
+
+	/**
+	 * este metodo...
+	 *
+	 * @param valor
+	 */
+	private void validar(BigDecimal valor) {
+		final String mensagem = String.format("O valor %s é inválido.", valor);
+		if (valor == null) {
+			throw new ValorInvalidoException(mensagem);
+		}
+
+		if (this.valorIncorreto(valor)) {
+			throw new ValorInvalidoException(mensagem);
+		}
+	}
+
+	private boolean valorIncorreto(BigDecimal valor) {
+		// NPE
+		return valor.compareTo(BigDecimal.ZERO) <= 0;
+	}
+
+	public ContaResponseDto toContaDto() {
+		ContaResponseDto dto = new ContaResponseDto();
+		dto.setAgencia(this.getAgencia());
+		dto.setNumero(this.getNumero());
+		dto.setSaldo(this.getSaldo());
+		dto.setChavePix(this.getPix());
+		return dto;
+	}
+
+	public PixBacenDto toBacenDto() {
+		PixBacenDto dto = new PixBacenDto();
+		dto.setAgencia(this.agencia);
+		dto.setNumero(this.numero);
+		dto.setChave(this.pix);
+		dto.setCpf(this.titular.getCpf());
+		return dto;
+	}
+}
