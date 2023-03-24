@@ -51,7 +51,7 @@ public class ContaService {
 		conta.setPix(requestDto.getChave());
 		validaContaExistente(conta);
 		Conta contaSalva = contaRepository.save(conta);
-		pixBacenService.cadastraPixBancoCentral(contaSalva.toBacenDto());
+	 //	pixBacenService.cadastraPixBancoCentral(contaSalva.toBacenDto());
 		return contaSalva;
 	}
 

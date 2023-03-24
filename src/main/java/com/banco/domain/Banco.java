@@ -19,6 +19,6 @@ public class Banco {
 	private Long id;
 
 	@Column(unique = true)
-	private int codigo = new Random().nextInt(1000);
+	private int codigo = 110; //new Random().nextInt(1000);
 	private String nome;
 }

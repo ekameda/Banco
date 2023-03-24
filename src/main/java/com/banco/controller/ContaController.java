@@ -27,12 +27,28 @@ public class ContaController {
     private final ContaRepository contaRepository;
     private final ContaService contaService;
 
+    
+    // Serviço de Criar Conta
+    // Ex. Postman Post localhost:8080/v1/contas
+    // Body raw Json
+	//    {
+	//        "agencia": "1234",
+	//        "nome": "Edu",
+	//        "cpf": "76345",
+	//        "codigo": "110",
+	//        "chave": "{{$randomUUID}}"
+	//    
+
     @PostMapping
     public ContaResponseDto criarConta(@RequestBody ContaRequestDto requestDto) {
         Conta conta = contaService.criarConta(requestDto);
         return conta.toContaDto();
     }
 
+    
+    // Serviço de Recuperar Contas
+    // Ex. Postman http://localhost:8080/v1/contas
+    
     @GetMapping()
     public List<Conta> procuraContas() {
         return contaService.procuraContas();
@@ -53,11 +69,19 @@ public class ContaController {
 //        }
 //    }
 
+    
+    // Serviço de Recuperar Conta po Id
+    //Ex. Postman Get http://localhost:8080/v1/contas/1
+    
     @GetMapping("/{id}")
     public ResponseEntity<ContaResponseDto> procuraContaPorIdSemTry(@PathVariable Long id) {
         Conta conta = contaService.procuraConta(id);
         return ResponseEntity.ok(conta.toContaDto());
     }
+    
+    
+    // Serviço Credito por Id
+    // Ex. Postman Post http://localhost:8080/v1/contas/2/credito/2000
 
     @PostMapping("/{idConta}/credito/{valor}")
     public ResponseEntity<ContaResponseDto> creditarConta(@PathVariable Long idConta, @PathVariable BigDecimal valor) {
@@ -65,6 +89,10 @@ public class ContaController {
         return ResponseEntity.ok(conta.toContaDto());
     }
 
+    
+    // Serviço de Debito por Id
+    // Ex. Postman Post http://localhost:8080/v1/contas/1/debito/1.5
+    
     @PostMapping("/{idConta}/debito/{valor}")
     public ResponseEntity<ContaResponseDto> debitaConta(@PathVariable Long idConta, @PathVariable BigDecimal valor) {
         Conta conta = contaService.debitaConta(idConta, valor);
@@ -72,11 +100,22 @@ public class ContaController {
     }
 
 
+    // Serviço Debita e Credita de Contas Por Id 
+    // Ex. Postman Post http://localhost:8080/v1/contas/1/2/5
+    
     @PostMapping("/{idContaDebitada}/{idContaCreditada}/{valor}")
     public ResponseEntity debitaConta(@PathVariable Long idContaDebitada, @PathVariable Long idContaCreditada, @PathVariable BigDecimal valor) {
         contaService.transferencia(idContaDebitada, idContaCreditada, valor);
         return ResponseEntity.ok("Transferencia realizada com sucesso");
     }
+    
+    
+    // Serviço de Debita por Id Debitada , ChavePix Creditada Body Json valor
+    // Ex. Postman http://localhost:8080/v1/contas/1/2/5
+    // Body Raw Jason
+	//    {
+	//        "valor": 10
+	//    }
 
     @PostMapping("/{idContaDebitada}/{chavePix}")
     public ResponseEntity debitaConta(@PathVariable Long idContaDebitada,
